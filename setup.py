@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-                'rs_yolov8 = yolov8_ros.yolov8:main'
+                'rs_yolov8 = yolov8_ros.yolov8:main',
+                'subscription_yolov8 = yolov8_ros.yolov8_ros_test:main'
         ],
     },
 )

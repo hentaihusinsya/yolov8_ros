@@ -14,7 +14,9 @@ from ultralytics import YOLO
 from sensor_msgs.msg import Image
 from vision_msgs.msg import Detection2D
 from vision_msgs.msg import BoundingBox2DArray, BoundingBox2D
-#from happymimi2_recognition_msgs import RecognitionList
+from happymimi2_recognition_msgs.srv import RecognitionList, MultipleLocalize, RecognitionCount.srv
+
+
 
 from geometry_msgs.msg import Pose2D
 
@@ -39,8 +41,13 @@ class RecognitionTools(Node):
             self.List_Object,
             qos_profile_sensor_data
         )
+
+        self.srv = self.create_service(RecognitionList)
+
+        
         self.subscription
 
+       
         #timer_period = 0.5
         #self.timer = self.create_timer(timer_period, self.ListObject)
 
@@ -48,13 +55,15 @@ class RecognitionTools(Node):
         print("debug1")
         orig = self.cv_bridge.imgmsg_to_cv2(data, "bgr8")
         return orig
+    
+    def Count_Object(self, )
         
 
     def List_Object(self, msg):
 
         print("debug2")
         image_data = self.process_image(msg)
-        results = self.yolo(image_data, show=True, conf=0.7)
+        results = self.yolo(image_data, show=True, conf=0.3)
 
         frame = results[0].plot()
         boxes = results[0].boxes
@@ -63,53 +72,99 @@ class RecognitionTools(Node):
         print(names)
         #a = len(results[0])
         b = len(boxes)
-        #print(a)
         print(b)
+        #print(a)
+        #print(b)
 
         c = boxes[1].cls[0].item()
-        print(c)
-        x1 = boxes[0].xyxy[0][0].item()
-        x2 = boxes[0].xyxy[0][1].item()
-        y1 = boxes[0].xyxy[0][2].item()
-        y2 = boxes[0].xyxy[0][3].item()
+        #print(c)
 
-        coordinate = [[]] * 6
 
-        for i in (b -1):
+        self.coordinate = [[] for i in range(b+1)]
+        
+        for i in range(b -1):
+
+            ''''
+            print(boxes[i].xyxy[0][0].item())
+            print(boxes[i''].xyxy[0][1].item())
+            print(boxes[i].xyxy[0][2].item())
+            print(boxes[i].xyxy[0][3].item())
+            '''
 
             x1 = boxes[i].xyxy[0][0].item()
             x2 = boxes[i].xyxy[0][1].item()
             y1 = boxes[i].xyxy[0][2].item()
             y2 = boxes[i].xyxy[0][3].item()
+            frame_id = boxes[i].cls[0].item()
+
+
+                    
+            w = float(round(x2 -x1))
+            h = float(round(y2 - y1))
+            cx = float(round(x1 + w / 2))
+            cy = float(round(y1 + h / 2))
+            offset_cx = 640/2 - cx
+            offset_cy = 480/2 - cy
+            
+            #print(w)
+            #print(h)
+            #print(cx)
+            #print(cy)
+            #print(frame_id)
+            
+            
+            
             
 
-            for i in range(b):
-                coordinate[0].append(float(round(x2 -x1)))
-                coordinate[1].append(float(round(y2 -y1)))
-                coordinate[2].append(int(round(x1 + w / 2)))
-                coordinate[3].append(int(round(y1 + h / 2)))
-                coordinate[4].append(640/2 - 
-                coordinate[5].append(480/2 - cy)
+            self.coordinate[0].append(w)
+            self.coordinate[1].append(h)
+            self.coordinate[2].append(cx)
+            self.coordinate[3].append(cy)
+            self.coordinate[4].append(640/2 - cx)
+            self.coordinate[5].append(480/2 - cy)
+            self.coordinate[6].append(frame_id)
+            #print(self.coordinate)
+            for i in range(b -1):
+                bounding_box = BoundingBox2D()
+                bounding_box.size_x = self.coordinate[0][i]
+                bounding_box.size_y = self.coordinate[1][i]
+                bounding_box.center.position.x = self.coordinate[4]
+                bounding
+            
+            
+
+        
+        bounding_boxes = BoundingBox2DArray()
+        bounding_box = BoundingBox2D()
+        bounding_boxes.boxes.append(self.coordinate)
+        #bounding_boxes.header.frame_id 
+
+            
+
+
+        
+        print(self.coordinate)
+            
                 
+       
+        #print(self.coordinate[0])
+        #print(self.coordinate[1])
+        #print(self.coordinate[2])
+        #print(self.coordinate[3])
+        #print(self.coordinate[4])
+        #print(self.coordinate[5])
         
-            #w = float(round(x2 -x1))
-            #h = float(round(y2 - y1))
-            #cx = int(round(x1 + w / 2))
-            #cy = int(round(y1 + h / 2))
-            #offset_cx = 640/2 - cx
-            #offset_cy = 480/2 - cy
 
+        #bounding_boxes = BoundingBox2D()
 
-        bounding_boxes = BoundingBox2D()
-
-        bounding_boxes.size_x = w
-        bounding_boxes.size_y = h
+        #bounding_boxes.size_x = w
+        #bounding_boxes.size_y = h
 
         
-        bounding_boxes.center.position.x = offset_cx
-        bounding_boxes.center.position.y = offset_cy
+        #bounding_boxes.center.position.x = offset_cx
+        #bounding_boxes.center.position.y = offset_cy
 
-        self.publisher_.publish(bounding_boxes)
+        #self.publisher_.publish(bounding_boxes)
 
 def main(args=None):
 
